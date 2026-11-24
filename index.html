@@ -1242,5 +1242,98 @@
       updateCampaignPreview();
     });
   </script>
-</body>
+</body><!-- === INTÉGRATION PAIEMENT CAMERPAY & REÇU (ARCHIVE-SUJETS GLOBAL) === -->
+<div id="camerpay-receipt-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(2,6,23,0.78);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#0f172a;color:#f8fafc;border:1px solid rgba(148,163,184,0.25);border-radius:16px;max-width:480px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,0.5);font-family:system-ui,-apple-system,sans-serif;">
+    <div style="display:flex;justify-content:space-between;align-items:start;gap:12px;border-bottom:1px solid rgba(148,163,184,0.2);padding-bottom:14px;">
+      <div>
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#f59e0b;font-weight:700;">Confirmation de transaction</div>
+        <h2 style="margin:4px 0 0;font-size:18px;font-weight:700;color:#ffffff;">Reçu de Paiement — Archive-Sujets Global (BTP Nexus)</h2>
+      </div>
+      <button type="button" onclick="fermerRecuCamerPay()" aria-label="Fermer" style="background:transparent;border:none;color:#94a3b8;font-size:22px;line-height:1;cursor:pointer;">&times;</button>
+    </div>
+
+    <div style="margin-top:16px;font-size:14px;line-height:1.55;color:#cbd5e1;">
+      <p style="margin:0 0 10px;">Votre règlement via <strong>CamerPay</strong> a bien été initié ou enregistré pour la plateforme <strong>Archive-Sujets Global</strong>.</p>
+      <div style="background:rgba(15,23,42,0.9);border:1px dashed rgba(245,158,11,0.45);border-radius:10px;padding:12px;font-size:13px;">
+        <div><strong>Lien de paiement :</strong> <span id="camerpay-receipt-link">https://camerpay.biz/l/w56p8leohm</span></div>
+        <div style="margin-top:4px;"><strong>Statut :</strong> <span style="color:#34d399;font-weight:600;">En cours de confirmation / vérifié</span></div>
+        <div style="margin-top:4px;"><strong>Date :</strong> <span id="camerpay-receipt-date"></span></div>
+      </div>
+      <p style="margin:12px 0 0;font-size:12.5px;color:#94a3b8;">
+        Conservez l'identifiant / la référence de transaction affichée par votre opérateur ou CamerPay pour toute activation d'accès ou suivi de dossier.
+      </p>
+    </div>
+
+    <div style="margin-top:18px;padding-top:12px;border-top:1px solid rgba(148,163,184,0.2);font-size:11.5px;color:#94a3b8;line-height:1.45;">
+      Archive-Sujets Global (nexus-btp-rho.vercel.app) — Règlement via camerpay.biz. Conservez la référence de transaction pour tout suivi ou activation.
+    </div>
+
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px;">
+      <button type="button" onclick="window.print()" style="padding:8px 14px;border-radius:8px;border:1px solid rgba(148,163,184,0.3);background:transparent;color:#e2e8f0;font-size:13px;cursor:pointer;">Imprimer / Enregistrer</button>
+      <button type="button" onclick="fermerRecuCamerPay()" style="padding:8px 16px;border-radius:8px;border:none;background:#f59e0b;color:#020617;font-weight:700;font-size:13px;cursor:pointer;">Terminé</button>
+    </div>
+  </div>
+</div>
+
+<button
+  type="button"
+  id="camerpay-quick-btn"
+  onclick="ouvrirPaiementCamerPay('Accès direct')"
+  style="position:fixed;bottom:18px;right:18px;z-index:9990;padding:10px 16px;border-radius:999px;border:none;background:#f59e0b;color:#020617;font-weight:700;font-size:13px;box-shadow:0 10px 25px rgba(0,0,0,0.35);cursor:pointer;"
+>
+  Payer via CamerPay
+</button>
+
+<script>
+  (function () {
+    const CAMERPAY_LINK = "https://camerpay.biz/l/w56p8leohm";
+
+    window.ouvrirPaiementCamerPay = function () {
+      window.open(CAMERPAY_LINK, "_blank", "noopener,noreferrer");
+    };
+
+    window.afficherRecuCamerPay = function () {
+      const modal = document.getElementById("camerpay-receipt-modal");
+      const dateEl = document.getElementById("camerpay-receipt-date");
+      if (dateEl) {
+        dateEl.textContent = new Date().toLocaleString("fr-FR");
+      }
+      if (modal) {
+        modal.style.display = "flex";
+      }
+    };
+
+    window.fermerRecuCamerPay = function () {
+      const modal = document.getElementById("camerpay-receipt-modal");
+      if (modal) {
+        modal.style.display = "none";
+      }
+    };
+
+    // Relie automatiquement les boutons/liens liés au paiement ou à Premium
+    document.addEventListener("click", function (event) {
+      const target = event.target.closest("a, button");
+      if (!target || target.closest("#camerpay-receipt-modal") || target.id === "camerpay-quick-btn") {
+        return;
+      }
+      const texte = (target.textContent || "").toLowerCase();
+      const motsCles = ["passer premium", "payer", "paiement", "débloquer", "s'abonner", "abonnement"];
+      if (motsCles.some((mot) => texte.includes(mot))) {
+        event.preventDefault();
+        window.ouvrirPaiementCamerPay();
+      }
+    });
+
+    // Affiche le reçu si l'URL contient ?paiement=ok ou #recu-paiement
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paiement") === "ok" || window.location.hash === "#recu-paiement") {
+      window.addEventListener("DOMContentLoaded", window.afficherRecuCamerPay);
+      if (document.readyState !== "loading") {
+        window.afficherRecuCamerPay();
+      }
+    }
+  })();
+</script>
+<!-- === FIN INTÉGRATION PAIEMENT CAMERPAY === -->
 </html>
